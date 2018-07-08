@@ -1,3 +1,7 @@
+import json
+import os
+from datetime import datetime
+
 from bs4 import BeautifulSoup, Tag
 import requests
 from typing import List, Set, Dict, Tuple
@@ -45,6 +49,14 @@ class Player(object):
             return self.name == o.name
         return False
 
+    def json(self):
+        data = {
+            'name': self.name,
+            'history': [history.json() for history in self.chip_history],
+        }
+
+        return json.dumps(data, sort_keys=True, default=str)
+
 
 class ChipHistory(object):
     """Pairs a date with a chip stack"""
@@ -58,11 +70,22 @@ class ChipHistory(object):
         """
         self.chip_count = chip_count
         self.rank = rank
-        self.day = day
+        self.event_day = day
+        self.timestamp = datetime.utcnow()
 
     def __repr__(self) -> str:
         """Represents a chip history as (day, count) (ex: (1b, 13,450)"""
-        return f"({self.day}, {self.chip_count})"
+        return f"({self.event_day}, {self.chip_count})"
+
+    def json(self):
+        data = {
+            'timestamp': self.timestamp,
+            'day': self.event_day,
+            'rank': self.rank,
+            'chip_count': self.chip_count,
+        }
+
+        return json.dumps(data, sort_keys=True, default=str)
 
 
 def chipstack(div_list):
@@ -138,9 +161,22 @@ def parse_day(event_day: str):
 
 def main():
     player_map: Dict[str, Player] = {}
+    data_filename = './data.json'
+
+    if not os.path.exists(data_filename):
+        with open(data_filename, 'w', encoding='utf-8') as f:
+            json.dump([], f)
+
     for day in EVENT_DAYS:
         player_map.update(parse_day(day))
-        print(player_map)
+        print(day)
+        with open(data_filename, 'r', encoding='utf-8') as f:
+            current_data = json.load(f)
+        with open(data_filename, 'w', encoding='utf-8') as f:
+            data = [player.json() for player in player_map.values()]
+            current_data.extend(data)
+            json.dump(current_data, f)
+
 
 
 if __name__ == '__main__':

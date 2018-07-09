@@ -79,13 +79,13 @@ class ChipHistory(object):
 
     def json(self):
         data = {
-            'timestamp': self.timestamp,
+            'timestamp': str(self.timestamp),
             'day': self.event_day,
             'rank': self.rank,
             'chip_count': self.chip_count,
         }
 
-        return json.dumps(data, sort_keys=True, default=str)
+        return json.dumps(data, sort_keys=True)
 
 
 def chipstack(div_list):
@@ -159,24 +159,27 @@ def parse_day(event_day: str):
     return player_map
 
 
-def main():
+def output_data(day: str):
     player_map: Dict[str, Player] = {}
-    data_filename = './data.json'
-
+    data_filename = f'data/data-{day}.json'
     if not os.path.exists(data_filename):
         with open(data_filename, 'w', encoding='utf-8') as f:
             json.dump([], f)
+    player_map.update(parse_day(day))
+    with open(data_filename, 'r', encoding='utf-8') as f:
+        current_data = json.load(f)
+    with open(data_filename, 'w', encoding='utf-8') as f:
+        data = [player.json() for player in player_map.values()]
+        current_data.extend(data)
+        json.dump(current_data, f)
 
-    for day in EVENT_DAYS:
-        player_map.update(parse_day(day))
-        print(day)
-        with open(data_filename, 'r', encoding='utf-8') as f:
-            current_data = json.load(f)
-        with open(data_filename, 'w', encoding='utf-8') as f:
-            data = [player.json() for player in player_map.values()]
-            current_data.extend(data)
-            json.dump(current_data, f)
 
+def main():
+    output_data('4')
+
+    # for day in EVENT_DAYS:
+    #     print(day)
+    #     output_data(day)
 
 
 if __name__ == '__main__':

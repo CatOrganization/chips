@@ -1,10 +1,11 @@
 import json
-import os
 from datetime import datetime
 
 from bs4 import BeautifulSoup, Tag
 import requests
 from typing import List, Set, Dict, Tuple
+
+from store import PersistentDataStore, LocalJsonStore
 
 StackElements = Set[Tag]
 Stacks = List[int]
@@ -159,27 +160,16 @@ def parse_day(event_day: str):
     return player_map
 
 
-def output_data(day: str):
-    player_map: Dict[str, Player] = {}
-    data_filename = f'data/data-{day}.json'
-    if not os.path.exists(data_filename):
-        with open(data_filename, 'w', encoding='utf-8') as f:
-            json.dump([], f)
-    player_map.update(parse_day(day))
-    with open(data_filename, 'r', encoding='utf-8') as f:
-        current_data = json.load(f)
-    with open(data_filename, 'w', encoding='utf-8') as f:
-        data = [player.json() for player in player_map.values()]
-        current_data.extend(data)
-        json.dump(current_data, f)
+def collect_data(data_store: PersistentDataStore, day: str):
+    data = [player.json() for player in parse_day(day).values()]
+
+    data_store.store(data)
 
 
 def main():
-    output_data('4')
-
-    # for day in EVENT_DAYS:
-    #     print(day)
-    #     output_data(day)
+    event_day = '10'
+    data_store = LocalJsonStore(event_day)
+    collect_data(data_store, event_day)
 
 
 if __name__ == '__main__':
